@@ -23,6 +23,7 @@ const (
 	Msg_WithdrawDelegatorReward_FullMethodName     = "/cosmos.distribution.v1beta1.Msg/WithdrawDelegatorReward"
 	Msg_WithdrawValidatorCommission_FullMethodName = "/cosmos.distribution.v1beta1.Msg/WithdrawValidatorCommission"
 	Msg_FundCommunityPool_FullMethodName           = "/cosmos.distribution.v1beta1.Msg/FundCommunityPool"
+	Msg_SetAutoRestake_FullMethodName              = "/cosmos.distribution.v1beta1.Msg/SetAutoRestake"
 	Msg_UpdateParams_FullMethodName                = "/cosmos.distribution.v1beta1.Msg/UpdateParams"
 	Msg_CommunityPoolSpend_FullMethodName          = "/cosmos.distribution.v1beta1.Msg/CommunityPoolSpend"
 	Msg_DepositValidatorRewardsPool_FullMethodName = "/cosmos.distribution.v1beta1.Msg/DepositValidatorRewardsPool"
@@ -41,13 +42,12 @@ type MsgClient interface {
 	// WithdrawValidatorCommission defines a method to withdraw the
 	// full commission to the validator address.
 	WithdrawValidatorCommission(ctx context.Context, in *MsgWithdrawValidatorCommission, opts ...grpc.CallOption) (*MsgWithdrawValidatorCommissionResponse, error)
-	// Deprecated: Do not use.
 	// FundCommunityPool defines a method to allow an account to directly
 	// fund the community pool.
-	//
-	// Deprecated: Use x/protocolpool module's FundCommunityPool instead.
-	// Since: cosmos-sdk 0.50
 	FundCommunityPool(ctx context.Context, in *MsgFundCommunityPool, opts ...grpc.CallOption) (*MsgFundCommunityPoolResponse, error)
+	// SetAutoRestake enables or disables automatic restaking for a delegator
+	// validator pair
+	SetAutoRestake(ctx context.Context, in *MsgSetAutoRestake, opts ...grpc.CallOption) (*MsgSetAutoRestakeResponse, error)
 	// UpdateParams defines a governance operation for updating the x/distribution
 	// module parameters. The authority is defined in the keeper.
 	//
@@ -58,8 +58,7 @@ type MsgClient interface {
 	// could be the governance module itself. The authority is defined in the
 	// keeper.
 	//
-	// Deprecated: Use x/protocolpool module's CommunityPoolSpend instead.
-	// Since: cosmos-sdk 0.50
+	// Since: cosmos-sdk 0.47
 	CommunityPoolSpend(ctx context.Context, in *MsgCommunityPoolSpend, opts ...grpc.CallOption) (*MsgCommunityPoolSpendResponse, error)
 	// DepositValidatorRewardsPool defines a method to provide additional rewards
 	// to delegators to a specific validator.
@@ -103,10 +102,18 @@ func (c *msgClient) WithdrawValidatorCommission(ctx context.Context, in *MsgWith
 	return out, nil
 }
 
-// Deprecated: Do not use.
 func (c *msgClient) FundCommunityPool(ctx context.Context, in *MsgFundCommunityPool, opts ...grpc.CallOption) (*MsgFundCommunityPoolResponse, error) {
 	out := new(MsgFundCommunityPoolResponse)
 	err := c.cc.Invoke(ctx, Msg_FundCommunityPool_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *msgClient) SetAutoRestake(ctx context.Context, in *MsgSetAutoRestake, opts ...grpc.CallOption) (*MsgSetAutoRestakeResponse, error) {
+	out := new(MsgSetAutoRestakeResponse)
+	err := c.cc.Invoke(ctx, Msg_SetAutoRestake_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,13 +160,12 @@ type MsgServer interface {
 	// WithdrawValidatorCommission defines a method to withdraw the
 	// full commission to the validator address.
 	WithdrawValidatorCommission(context.Context, *MsgWithdrawValidatorCommission) (*MsgWithdrawValidatorCommissionResponse, error)
-	// Deprecated: Do not use.
 	// FundCommunityPool defines a method to allow an account to directly
 	// fund the community pool.
-	//
-	// Deprecated: Use x/protocolpool module's FundCommunityPool instead.
-	// Since: cosmos-sdk 0.50
 	FundCommunityPool(context.Context, *MsgFundCommunityPool) (*MsgFundCommunityPoolResponse, error)
+	// SetAutoRestake enables or disables automatic restaking for a delegator
+	// validator pair
+	SetAutoRestake(context.Context, *MsgSetAutoRestake) (*MsgSetAutoRestakeResponse, error)
 	// UpdateParams defines a governance operation for updating the x/distribution
 	// module parameters. The authority is defined in the keeper.
 	//
@@ -170,8 +176,7 @@ type MsgServer interface {
 	// could be the governance module itself. The authority is defined in the
 	// keeper.
 	//
-	// Deprecated: Use x/protocolpool module's CommunityPoolSpend instead.
-	// Since: cosmos-sdk 0.50
+	// Since: cosmos-sdk 0.47
 	CommunityPoolSpend(context.Context, *MsgCommunityPoolSpend) (*MsgCommunityPoolSpendResponse, error)
 	// DepositValidatorRewardsPool defines a method to provide additional rewards
 	// to delegators to a specific validator.
@@ -196,6 +201,9 @@ func (UnimplementedMsgServer) WithdrawValidatorCommission(context.Context, *MsgW
 }
 func (UnimplementedMsgServer) FundCommunityPool(context.Context, *MsgFundCommunityPool) (*MsgFundCommunityPoolResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FundCommunityPool not implemented")
+}
+func (UnimplementedMsgServer) SetAutoRestake(context.Context, *MsgSetAutoRestake) (*MsgSetAutoRestakeResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetAutoRestake not implemented")
 }
 func (UnimplementedMsgServer) UpdateParams(context.Context, *MsgUpdateParams) (*MsgUpdateParamsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateParams not implemented")
@@ -291,6 +299,24 @@ func _Msg_FundCommunityPool_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Msg_SetAutoRestake_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(MsgSetAutoRestake)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MsgServer).SetAutoRestake(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Msg_SetAutoRestake_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MsgServer).SetAutoRestake(ctx, req.(*MsgSetAutoRestake))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Msg_UpdateParams_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MsgUpdateParams)
 	if err := dec(in); err != nil {
@@ -367,6 +393,10 @@ var Msg_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FundCommunityPool",
 			Handler:    _Msg_FundCommunityPool_Handler,
+		},
+		{
+			MethodName: "SetAutoRestake",
+			Handler:    _Msg_SetAutoRestake_Handler,
 		},
 		{
 			MethodName: "UpdateParams",
